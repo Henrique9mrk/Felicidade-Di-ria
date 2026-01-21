@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Nosso Diário 💖</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        padding: 20px;
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #ffafbd, #ffc3a0);
+        color: #333;
+    }
+
+    .container {
+        max-width: 700px;
+        margin: auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 18px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    h1, h2 {
+        text-align: center;
+        color: #8b0000;
+        margin-bottom: 15px;
+    }
+
+    .section {
+        background: #fff5f7;
+        border-radius: 14px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    textarea {
+        width: 100%;
+        min-height: 90px;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #ccc;
+        resize: none;
+        font-size: 15px;
+        margin-top: 10px;
+    }
+
+    button {
+        margin-top: 10px;
+        padding: 10px 20px;
+        border-radius: 20px;
+        border: none;
+        background: #ff4d6d;
+        color: #fff;
+        font-size: 15px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #e63956;
+    }
+
+    .entry {
+        background: #ffe4ea;
+        padding: 12px;
+        border-radius: 12px;
+        margin-top: 10px;
+    }
+
+    .date {
+        font-size: 13px;
+        color: #555;
+        margin-bottom: 5px;
+    }
+
+    .note {
+        background: #fff;
+        border-left: 4px solid #ff4d6d;
+        padding: 8px 10px;
+        border-radius: 8px;
+        margin-top: 6px;
+    }
+
+    .note small {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .status {
+        font-size: 14px;
+        margin-top: 8px;
+        color: #8b0000;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Nosso Diário 💕</h1>
+
+    <!-- PERGUNTA DO DIA -->
+    <div class="section">
+        <h2>Pergunta do Dia 💌</h2>
+        <p id="dailyQuestion"></p>
+
+        <textarea id="dailyAnswer" placeholder="Escreva sua resposta..."></textarea>
+        <button onclick="saveAnswer()">Salvar resposta</button>
+
+        <div class="status" id="status"></div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="section">
+        <h2>Respostas 📖</h2>
+        <div id="history"></div>
+    </div>
+
+    <!-- RECADINHOS -->
+    <div class="section">
+        <h2>Recadinhos do Dia 💌</h2>
+        <p class="date" id="noteDate"></p>
+
+        <textarea id="noteInput" placeholder="Escreva um recadinho de hoje..."></textarea>
+        <button onclick="saveNote()">Salvar recadinho</button>
+
+        <div id="notes"></div>
+    </div>
+</div>
+
+<script>
+/* 📅 PERGUNTAS FIXAS (21 a 27) */
+const diary = {
+    "2026-01-21": "O que te fez sorrir hoje?",
+    "2026-01-22": "Qual foi o momento mais bonito do seu dia?",
+    "2026-01-23": "O que você mais ama em nós dois?",
+    "2026-01-24": "Qual lembrança nossa aquece seu coração?",
+    "2026-01-25": "O que você sonha viver comigo?",
+    "2026-01-26": "Como você se sentiu hoje?",
+    "2026-01-27": "O que você diria para nós no futuro?"
+};
+
+const today = new Date().toISOString().slice(0,10);
+const question = diary[today];
+
+const questionEl = document.getElementById("dailyQuestion");
+const statusEl = document.getElementById("status");
+const answerInput = document.getElementById("dailyAnswer");
+
+/* MOSTRAR OU BLOQUEAR */
+if (!question) {
+    questionEl.innerText =
+        "Este diário funcionaifilterÉ9 só funciona entre 21 e 27 de janeiro de 2026 💖";
+    answerInput.style.display = "none";
+    document.querySelectorAll("button").forEach(b => b.style.display = "none");
+} else {
+    questionEl.innerText = question;
+}
+
+/* SALVAR RESPOSTA */
+function saveAnswer() {
+    const text = answerInput.value.trim();
+    if (!text) return;
+
+    const answers = JSON.parse(localStorage.getItem("diaryAnswers")) || {};
+
+    if (answers[today]) {
+        statusEl.innerText = "Você já respondeu hoje 💕";
+        return;
+    }
+
+    answers[today] = { question, answer: text };
+    localStorage.setItem("diaryAnswers", JSON.stringify(answers));
+
+    answerInput.value = "";
+    statusEl.innerText = "Resposta salva com carinho 💖";
+    loadHistory();
+}
+
+/* HISTÓRICO ORGANIZADO */
+function loadHistory() {
+    const answers = JSON.parse(localStorage.getItem("diaryAnswers")) || {};
+    const container = document.getElementById("history");
+    container.innerHTML = "";
+
+    Object.keys(diary).forEach(date => {
+        if (answers[date]) {
+            const div = document.createElement("div");
+            div.className = "entry";
+            div.innerHTML = `
+                <div class="date">${formatDate(date)}</div>
+                <strong>${answers[date].question}</strong>
+                <p>${answers[date].answer}</p>
+            `;
+            container.appendChild(div);
+        }
+    });
+}
+
+/* RECADINHOS DIÁRIOS */
+const notesKey = "dailyNotes";
+const notesContainer = document.getElementById("notes");
+const noteDateEl = document.getElementById("noteDate");
+
+if (question) {
+    noteDateEl.innerText = "Recadinhos de " + formatDate(today);
+}
+
+function saveNote() {
+    const text = document.getElementById("noteInput").value.trim();
+    if (!text) return;
+
+    const notes = JSON.parse(localStorage.getItem(notesKey)) || {};
+    if (!notes[today]) notes[today] = [];
+
+    notes[today].push({
+        text,
+        time: new Date().toLocaleTimeString()
+    });
+
+    localStorage.setItem(notesKey, JSON.stringify(notes));
+    document.getElementById("noteInput").value = "";
+    loadNotes();
+}
+
+function loadNotes() {
+    const notes = JSON.parse(localStorage.getItem(notesKey)) || {};
+    notesContainer.innerHTML = "";
+
+    if (!notes[today]) return;
+
+    notes[today].forEach(n => {
+        const div = document.createElement("div");
+        div.className = "note";
+        div.innerHTML = `
+            <p>${n.text}</p>
+            <small>${n.time}</small>
+        `;
+        notesContainer.appendChild(div);
+    });
+}
+
+/* FORMATAR DATA */
+function formatDate(date) {
+    const [y,m,d] = date.split("-");
+    return `${d}/${m}/${y}`;
+}
+
+loadHistory();
+loadNotes();
+</script>
+<script>
+localStorage.removeItem("diaryAnswers");
+localStorage.removeItem("dailyNotes");
+</script>
+
+</body>
+</html>
